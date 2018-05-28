@@ -20,6 +20,9 @@ import im.delight.android.ddp.db.DataStore;
 import im.delight.android.ddp.db.Database;
 import android.content.SharedPreferences;
 import android.content.Context;
+import android.security.KeyChain;
+import android.security.KeyChainException;
+
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketException;
@@ -32,6 +35,7 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.List;
@@ -47,6 +51,7 @@ import org.codehaus.jackson.JsonNode;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
@@ -229,9 +234,10 @@ public class Meteor {
 	}
 
 	/**
+	 * Creates a sslContext that trusts a certificate.
 	 *
-	 * @param cert
-	 * @return
+	 * @param cert The one and only certificate to trust
+	 * @return this instance to allow chaining
 	 */
 	public Meteor trustCaCert(Certificate cert) {
 
@@ -281,9 +287,72 @@ public class Meteor {
 			log(" provided CA cert will not be explicitly trusted");
 		}
 
-
 		return this;
 	}
+
+	public SSLContext getSSLContext() {
+		return sslContext;
+	}
+
+	public Meteor setSSLContext(SSLContext value) {
+		sslContext = value;
+		return this;
+	}
+
+	public Meteor trustKeyChain(Context ctx, String alias) {
+		return trustKeyChain(ctx, alias, "");
+	}
+
+	/**
+	 * Creates a sslContext that trusts certificates in the global keychain.
+	 *
+	 * @return this instance to allow chaining
+	 */
+	public Meteor trustKeyChain(Context ctx, String alias, String password) {
+		Exception result_e = null;
+
+		try {
+
+			KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+			ks.setKeyEntry(
+					alias, KeyChain.getPrivateKey(ctx, alias), "".toCharArray(),
+					KeyChain.getCertificateChain(ctx, alias));
+
+			KeyManagerFactory kmf = KeyManagerFactory.getInstance("X509");
+			kmf.init(ks, password.toCharArray());
+
+			TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
+			tmf.init(ks);
+
+			// Create an SSLContext that uses our TrustManager
+			SSLContext context = SSLContext.getInstance("TLS");
+			context.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+			// SSL context ready for use
+			sslContext = context;
+
+		} catch (NoSuchAlgorithmException e) {
+			result_e = e;
+		} catch (UnrecoverableKeyException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (KeyChainException e) {
+			e.printStackTrace();
+		} catch (KeyStoreException e) {
+			e.printStackTrace();
+		} catch (KeyManagementException e) {
+			e.printStackTrace();
+		}
+		if (result_e != null) {
+			result_e.printStackTrace();
+			log(TAG);
+			log(result_e.getMessage());
+			log(" was unable to set-up the keychain for use in Meteor");
+		}
+		return this;
+	}
+
 
 	/** Attempts to establish the connection to the server */
 	public void connect() {
