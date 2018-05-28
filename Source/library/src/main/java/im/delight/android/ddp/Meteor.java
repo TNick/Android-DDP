@@ -53,39 +53,39 @@ import javax.net.ssl.TrustManagerFactory;
 /** Client that connects to Meteor servers implementing the DDP protocol */
 public class Meteor {
 
-	private static final String TAG = "Meteor";
+	protected static final String TAG = "Meteor";
 	/** Supported versions of the DDP protocol in order of preference */
-	private static final String[] SUPPORTED_DDP_VERSIONS = { "1", "pre2", "pre1" };
+	protected static final String[] SUPPORTED_DDP_VERSIONS = { "1", "pre2", "pre1" };
 	/** The maximum number of attempts to re-connect to the server over WebSocket */
-	private static final int RECONNECT_ATTEMPTS_MAX = 5;
+	protected static final int RECONNECT_ATTEMPTS_MAX = 5;
 	/** Instance of Jackson library's ObjectMapper that converts between JSON and Java objects (POJOs) */
-	private static final ObjectMapper mObjectMapper = new ObjectMapper();
+	protected static final ObjectMapper mObjectMapper = new ObjectMapper();
 	/** The WebSocket connection that will be used for the data transfer */
-	private WebSocket mWebSocket;
+	protected WebSocket mWebSocket;
 	/** The callback that handles messages and events received from the WebSocket connection */
-	private final WebSocketListener mWebSocketListener;
+	protected final WebSocketListener mWebSocketListener;
 	/** Map that tracks all pending Listener instances */
-	private final Map<String, Listener> mListeners;
+	protected final Map<String, Listener> mListeners;
 	/** Messages that couldn't be dispatched yet and thus had to be queued */
-	private final Queue<String> mQueuedMessages;
-	private final Context mContext;
+	protected final Queue<String> mQueuedMessages;
+	protected final Context mContext;
 	/** Whether logging should be enabled or not */
-	private static boolean mLoggingEnabled;
-	private String mServerUri;
-	private String mDdpVersion;
+	protected static boolean mLoggingEnabled;
+	protected String mServerUri;
+	protected String mDdpVersion;
 	/** The number of unsuccessful attempts to re-connect in sequence */
-	private int mReconnectAttempts;
+	protected int mReconnectAttempts;
 	/** The callbacks that will handle events and receive messages from this client */
 	protected final CallbackProxy mCallbackProxy = new CallbackProxy();
-	private String mSessionID;
-	private boolean mConnected;
-	private String mLoggedInUserId;
-	private final DataStore mDataStore;
+	protected String mSessionID;
+	protected boolean mConnected;
+	protected String mLoggedInUserId;
+	protected final DataStore mDataStore;
 
 	// SSL related attributes
-	private SSLContext sslContext;
+	protected SSLContext sslContext;
 
-	private String loginToken;
+	protected String loginToken;
 
 	/**
 	 * Returns a new instance for a client connecting to a server via DDP over websocket
@@ -309,7 +309,7 @@ public class Meteor {
 	 *
 	 * @param isReconnect whether this is a re-connect attempt or not
 	 */
-	private void openConnection(final boolean isReconnect) {
+	protected void openConnection(final boolean isReconnect) {
 		if (isReconnect) {
 			if (mConnected) {
 				initConnection(mSessionID);
@@ -340,7 +340,7 @@ public class Meteor {
 	 *
 	 * @param existingSessionID an existing session ID or `null`
 	 */
-	private void initConnection(final String existingSessionID) {
+	protected void initConnection(final String existingSessionID) {
 		final Map<String, Object> data = new HashMap<String, Object>();
 
 		data.put(Protocol.Field.MESSAGE, Protocol.Message.CONNECT);
@@ -378,7 +378,7 @@ public class Meteor {
 	 *
 	 * @param obj the Java object to send
 	 */
-	private void send(final Object obj) {
+	protected void send(final Object obj) {
 		// serialize the object to JSON
 		final String jsonStr = toJson(obj);
 
@@ -395,7 +395,7 @@ public class Meteor {
 	 *
 	 * @param message the string to send
 	 */
-	private void send(final String message) {
+	protected void send(final String message) {
 		log(TAG);
 		log("  send");
 		log("    message == "+message);
@@ -449,7 +449,7 @@ public class Meteor {
 	 * @param obj the object to serialize
 	 * @return the serialized object in JSON format
 	 */
-	private String toJson(Object obj) {
+	protected String toJson(Object obj) {
 		try {
 			return mObjectMapper.writeValueAsString(obj);
 		}
@@ -460,7 +460,7 @@ public class Meteor {
 		}
 	}
 
-	private <T> T fromJson(final String json, final Class<T> targetType) {
+	protected <T> T fromJson(final String json, final Class<T> targetType) {
 		try {
 			if (json != null) {
 				final JsonNode jsonNode = mObjectMapper.readTree(json);
@@ -483,7 +483,7 @@ public class Meteor {
 	 *
 	 * @param payload the JSON payload to process
 	 */
-	private void handleMessage(final String payload) {
+	protected void handleMessage(final String payload) {
 		final JsonNode data;
 
 		try {
@@ -748,7 +748,7 @@ public class Meteor {
 	 * @param result the JSON result
 	 * @return whether the result is from a login attempt (`true`) or not (`false`)
 	 */
-	private static boolean isLoginResult(final JsonNode result) {
+	protected static boolean isLoginResult(final JsonNode result) {
 		return result.has(Protocol.Field.TOKEN) && result.has(Protocol.Field.ID);
 	}
 
@@ -785,7 +785,7 @@ public class Meteor {
 	 *
 	 * @param id the ID extracted from the `ping` or `null`
 	 */
-	private void sendPong(final String id) {
+	protected void sendPong(final String id) {
 		final Map<String, Object> data = new HashMap<String, Object>();
 
 		data.put(Protocol.Field.MESSAGE, Protocol.Message.PONG);
@@ -943,7 +943,7 @@ public class Meteor {
 	 * @param password the password to sign in with
 	 * @param listener the listener to call on success/error
 	 */
-	private void login(final String username, final String email, final String password, final ResultListener listener) {
+	protected void login(final String username, final String email, final String password, final ResultListener listener) {
 		final Map<String, Object> userData = new HashMap<String, Object>();
 
 		if (username != null) {
@@ -969,7 +969,7 @@ public class Meteor {
 	 * @param token the login token
 	 * @param listener the listener to call on success/error
 	 */
-	private void loginWithToken(final String token, final ResultListener listener) {
+	protected void loginWithToken(final String token, final ResultListener listener) {
 		final Map<String, Object> authData = new HashMap<String, Object>();
 		authData.put("resume", token);
 
@@ -1253,7 +1253,7 @@ public class Meteor {
 	 *
 	 * @return an empty map
 	 */
-	private static Map<String, Object> emptyMap() {
+	protected static Map<String, Object> emptyMap() {
 		return new HashMap<String, Object>();
 	}
 
@@ -1271,7 +1271,7 @@ public class Meteor {
 	 *
 	 * @return the last login token or `null`
 	 */
-	private String getLoginToken() {
+	protected String getLoginToken() {
 		return this.loginToken;
 	}
 
@@ -1280,11 +1280,11 @@ public class Meteor {
 	 *
 	 * @return the `SharedPreferences` instance
 	 */
-	private SharedPreferences getSharedPreferences() {
+	protected SharedPreferences getSharedPreferences() {
 		return mContext.getSharedPreferences(Preferences.FILE_NAME, Context.MODE_PRIVATE);
 	}
 
-	private void initSession() {
+	protected void initSession() {
 		// get the last login token
 		//final String loginToken = getLoginToken();
 
@@ -1322,7 +1322,7 @@ public class Meteor {
 	 *
 	 * @param signedInAutomatically whether we have already signed in automatically (`true`) or not (`false)`
 	 */
-	private void announceSessionReady(final boolean signedInAutomatically) {
+	protected void announceSessionReady(final boolean signedInAutomatically) {
 		// run the callback that waits for the connection to open
 		mCallbackProxy.onConnect(signedInAutomatically);
 
