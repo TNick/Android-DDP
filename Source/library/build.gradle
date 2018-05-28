@@ -1,13 +1,12 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
 
 android {
-	compileSdkVersion 19
-	buildToolsVersion "25.0.1"
+	compileSdkVersion 27
+	buildToolsVersion "27.0.3"
 
 	defaultConfig {
-		minSdkVersion 9
-		targetSdkVersion 19
+		minSdkVersion 14
+		targetSdkVersion 27
 	}
 
 	buildTypes {
@@ -25,9 +24,9 @@ android {
 }
 
 dependencies {
-	compile files('libs/jackson-core-asl-1.9.7.jar')
-	compile files('libs/jackson-mapper-asl-1.9.7.jar')
-	compile 'com.neovisionaries:nv-websocket-client:1.31'
+	implementation files('libs/jackson-core-asl-1.9.7.jar')
+	implementation files('libs/jackson-mapper-asl-1.9.7.jar')
+	implementation 'com.neovisionaries:nv-websocket-client:1.31'
 }
 
 task sourcesJar(type: Jar) {
