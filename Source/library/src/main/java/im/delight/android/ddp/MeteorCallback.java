@@ -25,4 +25,5 @@ public interface MeteorCallback extends DdpCallback {
 
 	void onException(Exception e);
 
+	void onLogMessage(String msg);
 }

@@ -161,6 +161,27 @@ public class CallbackProxy implements MeteorCallback {
 		}
 	}
 
+	@Override
+	public void onLogMessage(String msg) {
+		final String message = msg;
+		// iterate over all the registered callbacks
+		for (final MeteorCallback callback : mCallbacks) {
+			// if the callback exists
+			if (callback != null) {
+				// execute the callback on the main thread
+				mUiHandler.post(new Runnable() {
+
+					@Override
+					public void run() {
+						// run the proxied method with the same parameters
+						callback.onLogMessage(message);
+					}
+
+				});
+			}
+		}
+	}
+
 	public ResultListener forResultListener(final ResultListener callback) {
 		return new ResultListener() {
 
